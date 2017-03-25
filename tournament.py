@@ -8,7 +8,8 @@ import bleach
 
 
 def connect():
-    """Connect to the PostgreSQL database.  Returns a database connection and the cursor"""
+    """Connect to the PostgreSQL database.  Returns a database connection
+    and the cursor"""
     connection = psycopg2.connect("dbname=tournament")
     cursor = connection.cursor()
     return connection, cursor
@@ -22,26 +23,29 @@ def disconnect(connection, cursor):
 def deleteMatches():
     """Remove all the match records from the database."""
     connection, cursr = connect()
-    cursr.execute("delete from matches;")
-    cursr.execute("update players set wins=0, matches_played=0;")
+    query = "truncate matches;"
+    cursr.execute(query)
+    # cursr.execute("update players set wins=0, matches_played=0;")
     connection.commit()
-    disconnect(connection,cursr)
+    disconnect(connection, cursr)
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
     connection, cursr = connect()
-    cursr.execute("delete from players;")
+    query = "truncate players cascade;"
+    cursr.execute(query)
     connection.commit()
-    disconnect(connection,cursr)
+    disconnect(connection, cursr)
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
     connection, cursr = connect()
-    cursr.execute("select count(*) from players;")
-    total_players = int(cursr.fetchall()[0][0])
-    disconnect(connection,cursr)
+    query = "select count(*) from players;"
+    cursr.execute(query)
+    total_players = int(cursr.fetchone()[0])
+    disconnect(connection, cursr)
     return total_players
 
 
@@ -56,9 +60,11 @@ def registerPlayer(name):
     """
     player_name = bleach.clean(name)
     connection, cursr = connect()
-    cursr.execute("insert into players(name) values(%s);", (player_name,))
+    query = "insert into players(name) values(%s);"
+    params = (player_name,)
+    cursr.execute(query, params)
     connection.commit()
-    disconnect(connection,cursr)
+    disconnect(connection, cursr)
 
 
 def playerStandings():
@@ -75,10 +81,14 @@ def playerStandings():
         matches: the number of matches the player has played
     """
     connection, cursr = connect()
-    cursr.execute("select id, name, wins, matches_played from players"
-                  " order by wins desc;")
+    query = """select a.id, a.name, (select count(*) from matches where
+                winner = a.id) as won,
+                (select count(*) from matches
+                where winner = a.id or loser = a.id) as matches
+                from players a order by won desc ;"""
+    cursr.execute(query)
     playerStandings = cursr.fetchall()
-    disconnect(connection,cursr)
+    disconnect(connection, cursr)
     return playerStandings
 
 
@@ -92,15 +102,11 @@ def reportMatch(winner, loser):
     connection, cursr = connect()
     winner_player = bleach.clean(winner)
     loser_player = bleach.clean(loser)
-    cursr.execute("insert into matches(winner, loser) values(%s, %s) ;",
-                  (winner_player, loser_player))
-    cursr.execute("update players set wins = wins + 1 where id = %s ;",
-                  (winner_player,))
-    cursr.execute("update players set matches_played = matches_played + 1 "
-                  "where id in (%s, %s);",
-                  (winner_player, loser_player))
+    query = "insert into matches(winner, loser) values(%s, %s) ;"
+    params = (winner_player, loser_player)
+    cursr.execute(query, params)
     connection.commit()
-    disconnect(connection,cursr)
+    disconnect(connection, cursr)
 
 
 def swissPairings():

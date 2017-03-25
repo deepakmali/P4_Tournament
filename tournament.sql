@@ -16,9 +16,7 @@ create database tournament ;
 --Create table to store Participants 
 create table players (
 id serial primary key,
-name varchar(50) not null,
-wins smallint default 0,
-matches_played smallint default 0) ;
+name varchar(50) not null) ;
 
 --Create table to store the matches.
 create table matches (
