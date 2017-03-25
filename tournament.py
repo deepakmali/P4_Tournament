@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-# 
+#
 # tournament.py -- implementation of a Swiss-system tournament
 #
 
 import psycopg2
 import bleach
+
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
@@ -21,6 +22,7 @@ def deleteMatches():
     cursr.close()
     connection.close()
 
+
 def deletePlayers():
     """Remove all the player records from the database."""
     connection = connect()
@@ -28,7 +30,8 @@ def deletePlayers():
     cursr.execute("delete from players;")
     connection.commit()
     cursr.close()
-    connection.close()    
+    connection.close()
+
 
 def countPlayers():
     """Returns the number of players currently registered."""
@@ -40,12 +43,13 @@ def countPlayers():
     connection.close()
     return total_players
 
+
 def registerPlayer(name):
     """Adds a player to the tournament database.
-  
+
     The database assigns a unique serial id number for the player.  (This
     should be handled by your SQL database schema, not in your Python code.)
-  
+
     Args:
       name: the player's full name (need not be unique).
     """
@@ -61,8 +65,8 @@ def registerPlayer(name):
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
 
-    The first entry in the list should be the player in first place, or a player
-    tied for first place if there is currently a tie.
+    The first entry in the list should be the player in first place, or a
+    player tied for first place if there is currently a tie.
 
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
@@ -73,11 +77,12 @@ def playerStandings():
     """
     connection = connect()
     cursr = connection.cursor()
-    cursr.execute("select id, name, wins, matches_played from players order by wins desc;")
+    cursr.execute("select id, name, wins, matches_played from players"
+                  " order by wins desc;")
     playerStandings = cursr.fetchall()
     cursr.close()
     connection.close()
-    return playerStandings 
+    return playerStandings
 
 
 def reportMatch(winner, loser):
@@ -91,22 +96,26 @@ def reportMatch(winner, loser):
     cursr = connection.cursor()
     winner_player = bleach.clean(winner)
     loser_player = bleach.clean(loser)
-    cursr.execute("insert into matches(winner, loser) values(%s, %s) ;", (winner_player, loser_player))
-    cursr.execute("update players set wins = wins + 1 where id = %s ;", (winner_player,))
-    cursr.execute("update players set matches_played = matches_played + 1 where id in (%s, %s);",
+    cursr.execute("insert into matches(winner, loser) values(%s, %s) ;",
+                  (winner_player, loser_player))
+    cursr.execute("update players set wins = wins + 1 where id = %s ;",
+                  (winner_player,))
+    cursr.execute("update players set matches_played = matches_played + 1 "
+                  "where id in (%s, %s);",
                   (winner_player, loser_player))
     connection.commit()
     cursr.close()
     connection.close()
- 
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
-  
+
     Assuming that there are an even number of players registered, each player
     appears exactly once in the pairings.  Each player is paired with another
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
-  
+
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
         id1: the first player's unique id
@@ -116,10 +125,8 @@ def swissPairings():
     """
     participants = playerStandings()
     pairings = []
-    for i in range(0,len(participants),2):
-        pairings.append((participants[i][0], participants[i][1], participants[i+1][0], participants[i+1][1]))
+    for i in range(0, len(participants), 2):
+        pairings.append((participants[i][0], participants[i][1],
+                         participants[i+1][0], participants[i+1][1]))
 
     return pairings
-
-    
-
