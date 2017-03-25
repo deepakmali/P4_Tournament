@@ -11,6 +11,10 @@ This is the fourth project in the curriculam.
 * Install [postgresql](https://www.postgresql.org/download/) database.
 * Download all the files or clone the repository to your local machine.
 * This project uses a python module *bleach* Install it from [here.](https://pypi.python.org/pypi/bleach)
+* Connect to postgresql db ```psql ``` from command line.
+* Run the SQL file ```tournament.sql``` in ```psql``` prompt 
+using ```\i tournament.sql```.
+* Run ```\q``` to exit from the ```psql``` prompt.
 
 # How to run the project?
 * Open the terminal(Linux & Mac), command prompt(Windows).
